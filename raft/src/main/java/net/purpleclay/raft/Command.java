@@ -17,13 +17,6 @@ package net.purpleclay.raft;
  * {@code Serializable}. This interface needs to define some way to encode and
  * decode commands to allow for other forms of communications.
  */
-public interface Command {
-
-	/**
-	 * The identifier for this command.
-	 *
-	 * @return a {@code String} identifying this command
-	 */
-	String getIdentifier();
-
+public interface Command extends Encodable {
+	CommandEncoder getEncoder();
 }

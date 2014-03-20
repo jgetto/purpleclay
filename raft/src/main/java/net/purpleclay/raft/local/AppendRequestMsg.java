@@ -8,6 +8,7 @@
 package net.purpleclay.raft.local;
 
 import net.purpleclay.raft.Command;
+import net.purpleclay.raft.EncodedObject;
 
 
 /** Request to append a command (or issue a heartbeat). */
@@ -28,6 +29,10 @@ class AppendRequestMsg extends AbstractMessage {
 
 	// the commit index at the sender (which must be the leader)
 	private final long leaderCommit;
+	
+	private static final String PREV_LOG_INDEX_KEY = "PrevLogIndex";
+	private static final String PREV_LOG_TERM_KEY = "PrevLogTerm";
+	private static final String LEADER_COMMIT_KEY = "LeaderCommit";
 
 	/**
 	 * Creates an instance of {@code AppendRequestMsg} with no entries, which
@@ -67,6 +72,16 @@ class AppendRequestMsg extends AbstractMessage {
 
 		this.entries = entries != null ? entries : new Command[0];
 	}
+	
+	AppendRequestMsg(EncodedObject enc) {
+		super(enc, IDENTIFIER);
+		this.prevLogIndex = enc.getLongAttribute(PREV_LOG_INDEX_KEY);
+		this.prevLogTerm = enc.getLongAttribute(PREV_LOG_TERM_KEY);
+		this.leaderCommit = enc.getLongAttribute(LEADER_COMMIT_KEY);
+
+		this.entries = enc.getCommands();
+	}
+	
 
 	/**
 	 * Returns the previous log index.
@@ -102,6 +117,15 @@ class AppendRequestMsg extends AbstractMessage {
 	 */
 	long getLeaderCommit() {
 		return leaderCommit;
+	}
+	
+	@Override public void encode(EncodedObject enc) {
+		super.encodeBase(enc);
+		enc.addAttribute(PREV_LOG_INDEX_KEY, getPrevLogIndex());
+		enc.addAttribute(PREV_LOG_TERM_KEY, getPrevLogTerm());
+		enc.addAttribute(LEADER_COMMIT_KEY, getLeaderCommit());
+		enc.addCommands(getEntries());
+		
 	}
 
 	@Override public String toString() {

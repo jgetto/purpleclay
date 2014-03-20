@@ -7,6 +7,8 @@
 
 package net.purpleclay.raft.local;
 
+import net.purpleclay.raft.EncodedObject;
+
 
 /**
  * Response to an {@code AppendRequestMsg}. A successful response includes the
@@ -35,6 +37,9 @@ class AppendResponseMsg extends AbstractMessage {
 
 	// the index applied or new index request, depending on the response
 	private final long index;
+	
+	private static final String RESPONSE_KEY = "Response";
+	private static final String INDEX_KEY = "Index";
 
 	/**
 	 * Creates an instance of {@code AppendResponseMsg} for failed requests
@@ -67,6 +72,12 @@ class AppendResponseMsg extends AbstractMessage {
 		this.response = response;
 		this.index = index;
 	}
+	
+	AppendResponseMsg(EncodedObject enc) {
+		super(enc, IDENTIFIER);
+		this.response = enc.getBooleanAttribute(RESPONSE_KEY);
+		this.index = enc.getLongAttribute(INDEX_KEY);
+	}
 
 	/**
 	 * Returns the response.
@@ -86,9 +97,17 @@ class AppendResponseMsg extends AbstractMessage {
 	long getIndex() {
 		return index;
 	}
+	
+	@Override
+	public void encode(EncodedObject enc) {
+		super.encodeBase(enc);
+		enc.addAttribute(RESPONSE_KEY, getResponse());
+		enc.addAttribute(INDEX_KEY, getIndex());
+	}
 
 	@Override public String toString() {
 		return String.format("%s success=[%b] index=[%d]", 
 				super.toString(), getResponse(), getIndex());
 	}
+	
 }

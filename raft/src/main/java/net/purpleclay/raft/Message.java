@@ -15,7 +15,7 @@ package net.purpleclay.raft;
  * messages that go between virtual machines. This interface should have some
  * explicit mechanism for choosing other mashalling mechanisms.
  */
-public interface Message {
+public interface Message extends Encodable {
 
 	/**
 	 * Returns the identifier for the server that sent this message.
@@ -30,12 +30,5 @@ public interface Message {
 	 * @return the term associated with this message
 	 */
 	long getTerm();
-
-	/**
-	 * Returns the identifier for this message.
-	 *
-	 * @return the message identifier
-	 */
-	String getIdentifier();
 
 }

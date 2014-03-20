@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.CommandResultListener;
+import net.purpleclay.raft.EncodedObject;
 import net.purpleclay.raft.InternalServer;
 import net.purpleclay.raft.MembershipHandle;
 import net.purpleclay.raft.Message;
@@ -142,6 +143,10 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 	public static Command createRemoveCommand(long serverId) {
 		return new MembershipCommand(MembershipCommand.Action.REMOVE, serverId);
 	}
+	
+	public static Command decodeCommand(EncodedObject enc) {
+		return new MembershipCommand(enc);
+	}
 
 	/**
 	 * Registers the given {@code Server} instance as the active instance. If
@@ -178,6 +183,8 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 
 	/** Private Command implementation for membership management. */
 	private static class MembershipCommand implements Command, Serializable {
+		private static final String SERVER_ID_KEY = "ServerId";
+		private static final String ACTION_KEY = "Action";
 		private static final long serialVersionUID = -3973244826383976057L;
 		enum Action { ADD, REMOVE };
 		final Action action;
@@ -186,8 +193,20 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 			this.action = action;
 			this.serverId = serverId;
 		}
+		MembershipCommand(EncodedObject enc) {
+			Preconditions.checkArgument(COMMAND_ID.equals(enc.getIdentifier()), 
+					"Not a valid MembershipCommand");
+			this.action = Action.valueOf(enc.getAttribute(ACTION_KEY));
+			this.serverId = enc.getLongAttribute(SERVER_ID_KEY);
+		}
 		@Override public String getIdentifier() {
 			return COMMAND_ID;
+		}
+		@Override
+		public void encode(EncodedObject enc) {
+			enc.addIdentifier(COMMAND_ID);
+			enc.addAttribute(ACTION_KEY, action.toString());
+			enc.addAttribute(SERVER_ID_KEY, serverId);
 		}
 	}
 

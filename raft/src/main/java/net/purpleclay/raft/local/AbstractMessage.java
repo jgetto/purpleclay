@@ -9,7 +9,9 @@ package net.purpleclay.raft.local;
 
 import java.io.Serializable;
 
+import net.purpleclay.raft.EncodedObject;
 import net.purpleclay.raft.Message;
+import net.purpleclay.raft.util.Preconditions;
 
 /** Base utility for the local server messages. */
 abstract class AbstractMessage implements Message, Serializable {
@@ -24,6 +26,8 @@ abstract class AbstractMessage implements Message, Serializable {
 	/** standard serialization version identifier */
 	public static final long serialVersionUID = 1L;
 
+	private static final String SENDER_ID_KEY = "SenderId";
+	private static final String TERM_KEY = "Term";
 	/**
 	 * Creates an instance of {@code AbstractMessage}.
 	 * 
@@ -35,6 +39,15 @@ abstract class AbstractMessage implements Message, Serializable {
 		this.senderId = senderId;
 		this.term = term;
 		this.identifier = identifier;
+	}
+	
+	AbstractMessage(EncodedObject enc, String expectedIdentifier) {
+		Preconditions.checkArgument(expectedIdentifier.equals(enc.getIdentifier()), 
+				"Expected identifer [%s] does not match encoded identifier [%s]", 
+				expectedIdentifier, enc.getIdentifier());
+		this.senderId = enc.getLongAttribute(SENDER_ID_KEY);
+		this.term = enc.getLongAttribute(TERM_KEY);
+		this.identifier = enc.getIdentifier();
 	}
 
 	/* Implement Message */
@@ -53,5 +66,11 @@ abstract class AbstractMessage implements Message, Serializable {
 
 	@Override public String toString() {
 		return String.format("%sMsg sender=[%d] term=[%d]", getIdentifier(), getSenderId(), getTerm());
+	}
+	
+	public void encodeBase(EncodedObject enc ) {
+		enc.addIdentifier(getIdentifier());
+		enc.addAttribute(SENDER_ID_KEY, getSenderId());
+		enc.addAttribute(TERM_KEY, getTerm());
 	}
 }

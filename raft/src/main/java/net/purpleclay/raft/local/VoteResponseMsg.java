@@ -6,6 +6,9 @@
  */
 package net.purpleclay.raft.local;
 
+import net.purpleclay.raft.EncodedObject;
+import net.purpleclay.raft.util.Preconditions;
+
 
 /** Response to a {@code VoteRequestMsg}. */
 class VoteResponseMsg extends AbstractMessage {
@@ -18,6 +21,8 @@ class VoteResponseMsg extends AbstractMessage {
 
 	// the response to a request for a vote
 	private final boolean response;
+	
+	private final static String RESPONSE_KEY = "Response";
 
 	/**
 	 * Creates an instance of {@code VoteResponseMsg}.
@@ -31,6 +36,11 @@ class VoteResponseMsg extends AbstractMessage {
 
 		this.response = response;
 	}
+	
+	VoteResponseMsg(EncodedObject enc) {
+		super(enc, IDENTIFIER);
+		this.response = enc.getBooleanAttribute(RESPONSE_KEY);
+	}
 
 	/**
 	 * Returns whether the sender casts their vote for the requeting candidate
@@ -40,6 +50,11 @@ class VoteResponseMsg extends AbstractMessage {
 	 */
 	boolean getResponse() {
 		return response;
+	}
+	
+	@Override public void encode(EncodedObject enc) {
+		super.encodeBase(enc);
+		enc.addAttribute(RESPONSE_KEY, getResponse());
 	}
 
 	@Override public String toString() {

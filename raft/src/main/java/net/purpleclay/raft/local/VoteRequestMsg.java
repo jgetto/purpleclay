@@ -7,9 +7,17 @@
 
 package net.purpleclay.raft.local;
 
+import net.purpleclay.raft.EncodedObject;
+
 
 /** Request to vote for a new leader. */
 class VoteRequestMsg extends AbstractMessage {
+
+	private static final String LAST_LOG_TERM_KEY = "LastLogTerm";
+
+	private static final String LAST_LOG_INDEX_KEY = "LastLogIndex";
+
+	private static final String CANDIDATE_ID_KEY = "CandidateId";
 
 	/** Stable identifier for this message type. */
 	static final String IDENTIFIER = "VoteRequest";
@@ -34,6 +42,12 @@ class VoteRequestMsg extends AbstractMessage {
 
 		this.lastLogIndex = lastLogIndex;
 		this.lastLogTerm = lastLogTerm;
+	}
+	
+	VoteRequestMsg(EncodedObject enc) {
+		super(enc, IDENTIFIER);
+		this.lastLogIndex = enc.getLongAttribute(LAST_LOG_INDEX_KEY);
+		this.lastLogTerm = enc.getLongAttribute(LAST_LOG_TERM_KEY);
 	}
 
 	/**
@@ -61,6 +75,13 @@ class VoteRequestMsg extends AbstractMessage {
 	 */
 	long getLastLogTerm() {
 		return lastLogTerm;
+	}
+	
+	@Override public void encode(EncodedObject enc) {
+		super.encodeBase(enc);
+		enc.addAttribute(CANDIDATE_ID_KEY, getCandidateId());
+		enc.addAttribute(LAST_LOG_INDEX_KEY, getLastLogIndex());
+		enc.addAttribute(LAST_LOG_TERM_KEY, getLastLogTerm());
 	}
 
 	@Override public String toString() {

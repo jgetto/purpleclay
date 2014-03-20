@@ -7,6 +7,8 @@
 
 package net.purpleclay.raft.local;
 
+import net.purpleclay.raft.EncodedObject;
+
 
 /** Response to a {@code CommandRequestMsg}. */
 class CommandResponseMsg extends AbstractMessage {
@@ -25,6 +27,9 @@ class CommandResponseMsg extends AbstractMessage {
 
 	// constant for an unsuccessful append request
 	private static final long FAILED_APPEND = -1L;
+	
+	private static final String REQUEST_ID_KEY = "RequestId";
+	private static final String ENTRY_INDEX_KEY = "EntryIndex";
 	
 	/**
 	 * Creates an instance of {@code CommandResponseMsg} for failed requests.
@@ -50,6 +55,12 @@ class CommandResponseMsg extends AbstractMessage {
 
 		this.requestId = requestId;
 		this.entryIndex = entryIndex;
+	}
+	
+	CommandResponseMsg(EncodedObject enc) {
+		super(enc, IDENTIFIER);
+		this.requestId = enc.getLongAttribute(REQUEST_ID_KEY);
+		this.entryIndex = enc.getLongAttribute(ENTRY_INDEX_KEY);
 	}
 
 	/**
@@ -87,5 +98,13 @@ class CommandResponseMsg extends AbstractMessage {
 	@Override public String toString() {
 		return String.format("%s requestId=[%d] commandAccepted=[%b] entryIndex=[%d]", 
 				super.toString(), getRequestId(), commandAccepted(), getEntryIndex());
+	}
+
+	@Override
+	public void encode(EncodedObject enc) {
+		super.encodeBase(enc);
+		enc.addAttribute(REQUEST_ID_KEY, getRequestId());
+		enc.addAttribute(ENTRY_INDEX_KEY, getEntryIndex());
+		
 	}
 }

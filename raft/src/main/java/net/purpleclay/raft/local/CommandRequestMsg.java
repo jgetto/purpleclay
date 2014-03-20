@@ -8,6 +8,7 @@
 package net.purpleclay.raft.local;
 
 import net.purpleclay.raft.Command;
+import net.purpleclay.raft.EncodedObject;
 
 
 /** Request to append a command to the distributed log. */
@@ -24,6 +25,9 @@ class CommandRequestMsg extends AbstractMessage {
 
 	// some identifier that can be used to correlate responses
 	private final long requestId;
+	
+	private static final String REQUEST_ID_KEY = "RequestId";
+	
 
 	/**
 	 * Creates an instance of {@code CommandRequestMsg}.
@@ -50,6 +54,13 @@ class CommandRequestMsg extends AbstractMessage {
 
 		this.command = command;
 		this.requestId = requestId;
+	}
+	
+	CommandRequestMsg(EncodedObject enc) {
+		super(enc, IDENTIFIER);
+		
+		this.command = enc.getCommands()[0];
+		this.requestId = enc.getLongAttribute(REQUEST_ID_KEY);
 	}
 
 	/**
@@ -84,6 +95,16 @@ class CommandRequestMsg extends AbstractMessage {
 		return requestId;
 	}
 
+	@Override
+	public void encode(EncodedObject enc) {
+		super.encodeBase(enc);
+		enc.addAttribute(REQUEST_ID_KEY, getRequestId());
+		
+		Command[] commands = {getCommand()};
+		enc.addCommands(commands);
+		
+	}
+	
 	@Override public String toString() {
 		return String.format("%s command=[%s] responseRequested=[%b] requestId=[%d]", 
 				super.toString(), getCommand(), isResponseRequested(), getRequestId());

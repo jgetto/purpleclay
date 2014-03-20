@@ -7,6 +7,10 @@
 
 package net.purpleclay.raft;
 
+import java.util.Map;
+
+import net.purpleclay.raft.encoding.CommandEncoder;
+
 
 
 /** Interface used to process replicated log commands. */
@@ -23,5 +27,7 @@ public interface StateMachine {
 	 *                                  this state machine implementation
 	 */
 	void apply(Command command);
+	
+	Map<String,CommandEncoder> getCommandMapping();
 
 }

@@ -7,6 +7,9 @@
 
 package net.purpleclay.raft;
 
+import net.purpleclay.raft.encoding.Encodable;
+import net.purpleclay.raft.encoding.EncodedObject;
+
 
 /**
  * Interface for all commands that can be coordinated. For each command sent
@@ -18,5 +21,5 @@ package net.purpleclay.raft;
  * decode commands to allow for other forms of communications.
  */
 public interface Command extends Encodable {
-	CommandEncoder getEncoder();
+	void encode(EncodedObject enc);
 }

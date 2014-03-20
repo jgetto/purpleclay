@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import net.purpleclay.raft.client.Server;
+import net.purpleclay.raft.encoding.Encoder;
 import net.purpleclay.raft.util.AbstractServer;
 
 
@@ -99,6 +100,12 @@ public class ProxyServer extends AbstractServer {
 		public void run() {
 			server.send(command, listener);
 		}
+	}
+
+	@Override
+	public Encoder getEncoder() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

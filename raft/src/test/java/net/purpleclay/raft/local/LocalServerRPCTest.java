@@ -17,6 +17,7 @@ import net.purpleclay.raft.Message;
 import net.purpleclay.raft.NonDurableLog;
 import net.purpleclay.raft.client.Server;
 import net.purpleclay.raft.client.ServerBuilder;
+import net.purpleclay.raft.encoding.Encoder;
 import net.purpleclay.raft.local.LocalServer.Role;
 import net.purpleclay.raft.util.AbstractServer;
 
@@ -238,6 +239,12 @@ public class LocalServerRPCTest {
 
 		@Override
 		public Server getLeader() {
+			return null;
+		}
+
+		@Override
+		public Encoder getEncoder() {
+			// TODO Auto-generated method stub
 			return null;
 		}
 		

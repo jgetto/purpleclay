@@ -7,8 +7,14 @@
 
 package net.purpleclay.raft.local;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import net.purpleclay.raft.Command;
-import net.purpleclay.raft.EncodedObject;
+import net.purpleclay.raft.encoding.EncodedObject;
+import net.purpleclay.raft.encoding.Encoder;
+import net.purpleclay.raft.encoding.MessageEncoder;
 
 
 /** Request to append a command to the distributed log. */
@@ -28,6 +34,11 @@ class CommandRequestMsg extends AbstractMessage {
 	
 	private static final String REQUEST_ID_KEY = "RequestId";
 	
+	private static final Map<String,MessageEncoder<CommandRequestMsg>> messageEncoderMap = 
+			new HashMap<String,MessageEncoder<CommandRequestMsg>>();
+	static {
+		messageEncoderMap.put(IDENTIFIER, new CommandRequestEncoder());
+	}
 
 	/**
 	 * Creates an instance of {@code CommandRequestMsg}.
@@ -54,13 +65,6 @@ class CommandRequestMsg extends AbstractMessage {
 
 		this.command = command;
 		this.requestId = requestId;
-	}
-	
-	CommandRequestMsg(EncodedObject enc) {
-		super(enc, IDENTIFIER);
-		
-		this.command = enc.getCommands()[0];
-		this.requestId = enc.getLongAttribute(REQUEST_ID_KEY);
 	}
 
 	/**
@@ -94,20 +98,43 @@ class CommandRequestMsg extends AbstractMessage {
 			throw new IllegalStateException("no identifier was included");
 		return requestId;
 	}
-
-	@Override
-	public void encode(EncodedObject enc) {
-		super.encodeBase(enc);
-		enc.addAttribute(REQUEST_ID_KEY, getRequestId());
-		
-		Command[] commands = {getCommand()};
-		enc.addCommands(commands);
-		
-	}
 	
 	@Override public String toString() {
 		return String.format("%s command=[%s] responseRequested=[%b] requestId=[%d]", 
 				super.toString(), getCommand(), isResponseRequested(), getRequestId());
+	}
+	
+	private static class CommandRequestEncoder implements MessageEncoder<CommandRequestMsg> {
+
+		@Override
+		public CommandRequestMsg decode(Encoder encoder, EncodedObject encObj) {
+			long senderId = AbstractMessage.extractSenderId(encObj);
+			long term = AbstractMessage.extractTerm(encObj);
+			
+			Command command = encObj.getCommands(encoder)[0];
+			long requestId = encObj.getLongAttribute(REQUEST_ID_KEY);
+			
+			return new CommandRequestMsg(senderId, term, command, requestId);
+		}
+
+		@Override
+		public void encode(Encoder encoder, EncodedObject encObj, CommandRequestMsg message) {
+			AbstractMessage.encodeBase(encObj, message);
+			encObj.addAttribute(REQUEST_ID_KEY, message.getRequestId());
+			
+			Command[] commands = {message.getCommand()};
+			encObj.addCommands(encoder, commands);
+		}
+		
+	}
+	
+	public static Map<String,MessageEncoder<CommandRequestMsg>> getMessageEncoderMap() {
+		return Collections.unmodifiableMap(messageEncoderMap);
+	}
+	
+	@Override
+	public void encode(Encoder encoder, EncodedObject encObj) {
+		messageEncoderMap.get(IDENTIFIER).encode(encoder, encObj, this);
 	}
 
 }

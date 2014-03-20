@@ -8,6 +8,7 @@
 package net.purpleclay.raft.local;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -22,12 +23,17 @@ import java.util.concurrent.atomic.AtomicLong;
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.CommandResultListener;
 import net.purpleclay.raft.ConsensusHandler;
+import net.purpleclay.raft.InternalServer;
 import net.purpleclay.raft.Log;
 import net.purpleclay.raft.MembershipHandle;
 import net.purpleclay.raft.Message;
-import net.purpleclay.raft.InternalServer;
+import net.purpleclay.raft.encoding.CommandEncoder;
+import net.purpleclay.raft.encoding.EncodedObject;
+import net.purpleclay.raft.encoding.Encoder;
+import net.purpleclay.raft.encoding.MessageEncoder;
 import net.purpleclay.raft.util.AbstractServer;
 import net.purpleclay.raft.util.MajorityConsensusHandler;
+import net.purpleclay.raft.util.Preconditions;
 
 /**
  * Implementation of {@code Server} that is used locally to support the
@@ -128,6 +134,8 @@ public class LocalServer extends AbstractServer {
 	// waiting to hear the result of the request
 	private final Map<Long,CommandResultListener> remoteWaiters =
 		new ConcurrentHashMap<Long,CommandResultListener>();
+	
+	private final Encoder encoder = new ServerEncoder();
 
 	/**
 	 * Creates an instance of {@code LocalServer} with no previous state.
@@ -320,6 +328,10 @@ public class LocalServer extends AbstractServer {
 	
 	@Override public synchronized InternalServer getLeader() {
 		return currentLeader;
+	}
+	
+	@Override public Encoder getEncoder() {
+		return encoder;
 	}
 	
 	/* RPC Logic Routines */
@@ -642,6 +654,54 @@ public class LocalServer extends AbstractServer {
 
 	long getCommitIndex() {
 		return log.getCommitIndex();
+	}
+	
+	private class ServerEncoder implements Encoder {
+		private final Map<String,MessageEncoder<? extends Message>> messageEncoderMap = 
+				new HashMap<String,MessageEncoder<? extends Message>>();
+		ServerEncoder() {
+			messageEncoderMap.putAll(AppendRequestMsg.getMessageEncoderMap());
+			messageEncoderMap.putAll(AppendResponseMsg.getMessageEncoderMap());
+			messageEncoderMap.putAll(CommandRequestMsg.getMessageEncoderMap());
+			messageEncoderMap.putAll(CommandResponseMsg.getMessageEncoderMap());
+			messageEncoderMap.putAll(VoteRequestMsg.getMessageEncoderMap());
+			messageEncoderMap.putAll(VoteResponseMsg.getMessageEncoderMap());
+		}
+
+		@Override
+		public Command decodeCommand(EncodedObject enc) {
+			CommandEncoder encoder = lookupCommandEncoder(enc.getIdentifier());
+			return encoder.decode(enc);
+		}
+
+		@Override
+		public void encodeCommand(EncodedObject enc, Command command) {
+			command.encode(enc);
+		}
+
+		@Override
+		public Message decodeMessage(EncodedObject enc) {
+			MessageEncoder<? extends Message> encoder = lookupMessageEncoder(enc.getIdentifier());
+			return encoder.decode(this, enc);
+		}
+
+		@Override
+		public void enocdeMessage(EncodedObject enc, Message msg) {
+			msg.encode(this, enc);
+		}
+		
+		private CommandEncoder lookupCommandEncoder(String id) {
+			CommandEncoder encoder = log.getCommandMapping().get(id);
+			Preconditions.checkArgument(encoder != null, "Could not load encoder for identifier " + id);
+			return encoder;
+		}
+		
+		private MessageEncoder<? extends Message> lookupMessageEncoder(String id) {
+			MessageEncoder<? extends Message> encoder = messageEncoderMap.get(id);
+			Preconditions.checkArgument(encoder != null, "Could not load encoder for identifier " + id);
+			return encoder;
+		}
+		
 	}
 
 }

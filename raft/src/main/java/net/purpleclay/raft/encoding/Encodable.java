@@ -1,4 +1,4 @@
-package net.purpleclay.raft;
+package net.purpleclay.raft.encoding;
 
 public interface Encodable {
 	/**
@@ -8,5 +8,6 @@ public interface Encodable {
 	 */
 	String getIdentifier();
 	
-	void encode(EncodedObject enc);
+	// TODO: REMOVE after changing messages
+	//
 }

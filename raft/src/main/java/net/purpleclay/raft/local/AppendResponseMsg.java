@@ -7,7 +7,13 @@
 
 package net.purpleclay.raft.local;
 
-import net.purpleclay.raft.EncodedObject;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import net.purpleclay.raft.encoding.EncodedObject;
+import net.purpleclay.raft.encoding.Encoder;
+import net.purpleclay.raft.encoding.MessageEncoder;
 
 
 /**
@@ -40,6 +46,12 @@ class AppendResponseMsg extends AbstractMessage {
 	
 	private static final String RESPONSE_KEY = "Response";
 	private static final String INDEX_KEY = "Index";
+	
+	private static final Map<String,MessageEncoder<AppendResponseMsg>> messageEncoderMap = 
+			new HashMap<String,MessageEncoder<AppendResponseMsg>>();
+	static {
+		messageEncoderMap.put(IDENTIFIER, new AppendResponseEncoder());
+	}
 
 	/**
 	 * Creates an instance of {@code AppendResponseMsg} for failed requests
@@ -72,12 +84,6 @@ class AppendResponseMsg extends AbstractMessage {
 		this.response = response;
 		this.index = index;
 	}
-	
-	AppendResponseMsg(EncodedObject enc) {
-		super(enc, IDENTIFIER);
-		this.response = enc.getBooleanAttribute(RESPONSE_KEY);
-		this.index = enc.getLongAttribute(INDEX_KEY);
-	}
 
 	/**
 	 * Returns the response.
@@ -97,17 +103,41 @@ class AppendResponseMsg extends AbstractMessage {
 	long getIndex() {
 		return index;
 	}
-	
-	@Override
-	public void encode(EncodedObject enc) {
-		super.encodeBase(enc);
-		enc.addAttribute(RESPONSE_KEY, getResponse());
-		enc.addAttribute(INDEX_KEY, getIndex());
-	}
 
 	@Override public String toString() {
 		return String.format("%s success=[%b] index=[%d]", 
 				super.toString(), getResponse(), getIndex());
 	}
 	
+	private static class AppendResponseEncoder implements MessageEncoder<AppendResponseMsg> {
+
+		@Override
+		public AppendResponseMsg decode(Encoder encoder, EncodedObject encObj) {
+			long senderId = AbstractMessage.extractSenderId(encObj);
+			long term = AbstractMessage.extractTerm(encObj);
+			
+			boolean response = encObj.getBooleanAttribute(RESPONSE_KEY);
+			long index = encObj.getLongAttribute(INDEX_KEY);
+			
+			return new AppendResponseMsg(senderId, term, response, index);
+			
+		}
+
+		@Override
+		public void encode(Encoder encoder, EncodedObject encObj, AppendResponseMsg message) {
+			AbstractMessage.encodeBase(encObj, message);
+			encObj.addAttribute(RESPONSE_KEY, message.getResponse());
+			encObj.addAttribute(INDEX_KEY, message.getIndex());
+		}
+		
+	}
+	
+	public static Map<String,MessageEncoder<AppendResponseMsg>> getMessageEncoderMap() {
+		return Collections.unmodifiableMap(messageEncoderMap);
+	}
+	
+	@Override
+	public void encode(Encoder encoder, EncodedObject encObj) {
+		messageEncoderMap.get(IDENTIFIER).encode(encoder, encObj, this);
+	}
 }

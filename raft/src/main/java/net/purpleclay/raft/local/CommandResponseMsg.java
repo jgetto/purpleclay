@@ -7,7 +7,13 @@
 
 package net.purpleclay.raft.local;
 
-import net.purpleclay.raft.EncodedObject;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import net.purpleclay.raft.encoding.EncodedObject;
+import net.purpleclay.raft.encoding.Encoder;
+import net.purpleclay.raft.encoding.MessageEncoder;
 
 
 /** Response to a {@code CommandRequestMsg}. */
@@ -30,6 +36,12 @@ class CommandResponseMsg extends AbstractMessage {
 	
 	private static final String REQUEST_ID_KEY = "RequestId";
 	private static final String ENTRY_INDEX_KEY = "EntryIndex";
+	
+	private static final Map<String,MessageEncoder<CommandResponseMsg>> messageEncoderMap = 
+			new HashMap<String,MessageEncoder<CommandResponseMsg>>();
+	static {
+		messageEncoderMap.put(IDENTIFIER, new CommandResponseEncoder());
+	}
 	
 	/**
 	 * Creates an instance of {@code CommandResponseMsg} for failed requests.
@@ -55,12 +67,6 @@ class CommandResponseMsg extends AbstractMessage {
 
 		this.requestId = requestId;
 		this.entryIndex = entryIndex;
-	}
-	
-	CommandResponseMsg(EncodedObject enc) {
-		super(enc, IDENTIFIER);
-		this.requestId = enc.getLongAttribute(REQUEST_ID_KEY);
-		this.entryIndex = enc.getLongAttribute(ENTRY_INDEX_KEY);
 	}
 
 	/**
@@ -100,11 +106,34 @@ class CommandResponseMsg extends AbstractMessage {
 				super.toString(), getRequestId(), commandAccepted(), getEntryIndex());
 	}
 
-	@Override
-	public void encode(EncodedObject enc) {
-		super.encodeBase(enc);
-		enc.addAttribute(REQUEST_ID_KEY, getRequestId());
-		enc.addAttribute(ENTRY_INDEX_KEY, getEntryIndex());
+	private static class CommandResponseEncoder implements MessageEncoder<CommandResponseMsg> {
+
+		@Override
+		public CommandResponseMsg decode(Encoder encoder, EncodedObject encObj) {
+			long senderId = AbstractMessage.extractSenderId(encObj);
+			long term = AbstractMessage.extractTerm(encObj);
+			
+			long requestId = encObj.getLongAttribute(REQUEST_ID_KEY);
+			long entryIndex = encObj.getLongAttribute(ENTRY_INDEX_KEY);
+			
+			return new CommandResponseMsg(senderId, term, requestId, entryIndex);
+		}
+
+		@Override
+		public void encode(Encoder encoder, EncodedObject encObj, CommandResponseMsg message) {
+			AbstractMessage.encodeBase(encObj, message);
+			encObj.addAttribute(REQUEST_ID_KEY, message.getRequestId());
+			encObj.addAttribute(ENTRY_INDEX_KEY, message.getEntryIndex());
+		}
 		
+	}
+	
+	public static Map<String,MessageEncoder<CommandResponseMsg>> getMessageEncoderMap() {
+		return Collections.unmodifiableMap(messageEncoderMap);
+	}
+	
+	@Override
+	public void encode(Encoder encoder, EncodedObject encObj) {
+		messageEncoderMap.get(IDENTIFIER).encode(encoder, encObj, this);
 	}
 }

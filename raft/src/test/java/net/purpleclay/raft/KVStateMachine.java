@@ -8,9 +8,13 @@
 package net.purpleclay.raft;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.purpleclay.raft.encoding.CommandEncoder;
+import net.purpleclay.raft.encoding.EncodedObject;
 import net.purpleclay.raft.util.Preconditions;
 
 
@@ -21,6 +25,11 @@ public class KVStateMachine implements StateMachine {
 
 	private final Map<String,String> kvMap =
 		new ConcurrentHashMap<String,String>();
+	
+	private static final Map<String,CommandEncoder> commandMap =  new HashMap<String,CommandEncoder>();
+	static {
+		commandMap.put(COMMAND_ID, new KVCommand.KVCommandEncoder());
+	}
 
 	@Override public void apply(Command command) {
 		if (! (command instanceof KVCommand))
@@ -79,6 +88,11 @@ public class KVStateMachine implements StateMachine {
 			}
 			
 		}
+	}
+
+	@Override
+	public Map<String, CommandEncoder> getCommandMapping() {
+		return Collections.unmodifiableMap(commandMap);
 	}
 
 }

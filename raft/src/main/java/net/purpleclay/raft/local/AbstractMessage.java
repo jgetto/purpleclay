@@ -9,8 +9,8 @@ package net.purpleclay.raft.local;
 
 import java.io.Serializable;
 
-import net.purpleclay.raft.EncodedObject;
 import net.purpleclay.raft.Message;
+import net.purpleclay.raft.encoding.EncodedObject;
 import net.purpleclay.raft.util.Preconditions;
 
 /** Base utility for the local server messages. */
@@ -68,9 +68,19 @@ abstract class AbstractMessage implements Message, Serializable {
 		return String.format("%sMsg sender=[%d] term=[%d]", getIdentifier(), getSenderId(), getTerm());
 	}
 	
-	public void encodeBase(EncodedObject enc ) {
-		enc.addIdentifier(getIdentifier());
-		enc.addAttribute(SENDER_ID_KEY, getSenderId());
-		enc.addAttribute(TERM_KEY, getTerm());
+	public static void encodeBase(EncodedObject enc, Message message ) {
+		enc.addIdentifier(message.getIdentifier());
+		enc.addAttribute(SENDER_ID_KEY, message.getSenderId());
+		enc.addAttribute(TERM_KEY, message.getTerm());
 	}
+	
+	public static long extractSenderId(EncodedObject enc) {
+		return enc.getLongAttribute(SENDER_ID_KEY);
+	}
+	
+	public static long extractTerm(EncodedObject enc) {
+		return enc.getLongAttribute(TERM_KEY);
+	}
+	
+	
 }

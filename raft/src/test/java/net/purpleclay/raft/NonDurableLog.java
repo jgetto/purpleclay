@@ -9,6 +9,9 @@ package net.purpleclay.raft;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import net.purpleclay.raft.encoding.CommandEncoder;
 
 
 /** Non-durable implementation of {@code Log} for testing. */
@@ -90,6 +93,11 @@ public class NonDurableLog implements Log {
 			this.term = term;
 			this.command = command;
 		}
+	}
+
+	@Override
+	public Map<String, CommandEncoder> getCommandMapping() {
+		return stateMachine.getCommandMapping();
 	}
 
 }

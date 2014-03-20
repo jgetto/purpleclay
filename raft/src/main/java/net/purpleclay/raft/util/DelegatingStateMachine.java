@@ -7,10 +7,14 @@
 
 package net.purpleclay.raft.util;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.StateMachine;
+import net.purpleclay.raft.encoding.CommandEncoder;
 
 
 /**
@@ -22,6 +26,9 @@ public class DelegatingStateMachine implements StateMachine {
 	// the mapping from supported identifiers to state machines
 	private final ConcurrentHashMap<String,StateMachine> machines =
 		new ConcurrentHashMap<String,StateMachine>();
+	
+	private final Map<String,CommandEncoder> commandMap = 
+			new HashMap<String,CommandEncoder>();
 
 	/* Implement StateMachine */
 
@@ -44,9 +51,16 @@ public class DelegatingStateMachine implements StateMachine {
 	 * @throws IllegalArgumentException if this identifier is already accepted
 	 *                                  by some other {@code StateMachine}
 	 */
-	public void addMachine(StateMachine machine, String commandIdentifier) {
+	public synchronized void addMachine(StateMachine machine, String commandIdentifier) {
 		if (machines.putIfAbsent(commandIdentifier, machine) != null)
 			throw new IllegalArgumentException("Identifier already registered");
+		
+		commandMap.putAll(machine.getCommandMapping());
+	}
+
+	@Override
+	public Map<String, CommandEncoder> getCommandMapping() {
+		return Collections.unmodifiableMap(commandMap);
 	}
 
 }

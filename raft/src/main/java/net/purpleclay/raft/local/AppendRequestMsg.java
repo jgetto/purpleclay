@@ -7,8 +7,14 @@
 
 package net.purpleclay.raft.local;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import net.purpleclay.raft.Command;
-import net.purpleclay.raft.EncodedObject;
+import net.purpleclay.raft.encoding.EncodedObject;
+import net.purpleclay.raft.encoding.Encoder;
+import net.purpleclay.raft.encoding.MessageEncoder;
 
 
 /** Request to append a command (or issue a heartbeat). */
@@ -33,6 +39,13 @@ class AppendRequestMsg extends AbstractMessage {
 	private static final String PREV_LOG_INDEX_KEY = "PrevLogIndex";
 	private static final String PREV_LOG_TERM_KEY = "PrevLogTerm";
 	private static final String LEADER_COMMIT_KEY = "LeaderCommit";
+	
+	private static final Map<String,MessageEncoder<AppendRequestMsg>> messageEncoderMap = 
+			new HashMap<String,MessageEncoder<AppendRequestMsg>>();
+	static {
+		messageEncoderMap.put(IDENTIFIER, new AppendRequestEncoder());
+	}
+
 
 	/**
 	 * Creates an instance of {@code AppendRequestMsg} with no entries, which
@@ -72,16 +85,6 @@ class AppendRequestMsg extends AbstractMessage {
 
 		this.entries = entries != null ? entries : new Command[0];
 	}
-	
-	AppendRequestMsg(EncodedObject enc) {
-		super(enc, IDENTIFIER);
-		this.prevLogIndex = enc.getLongAttribute(PREV_LOG_INDEX_KEY);
-		this.prevLogTerm = enc.getLongAttribute(PREV_LOG_TERM_KEY);
-		this.leaderCommit = enc.getLongAttribute(LEADER_COMMIT_KEY);
-
-		this.entries = enc.getCommands();
-	}
-	
 
 	/**
 	 * Returns the previous log index.
@@ -118,19 +121,47 @@ class AppendRequestMsg extends AbstractMessage {
 	long getLeaderCommit() {
 		return leaderCommit;
 	}
-	
-	@Override public void encode(EncodedObject enc) {
-		super.encodeBase(enc);
-		enc.addAttribute(PREV_LOG_INDEX_KEY, getPrevLogIndex());
-		enc.addAttribute(PREV_LOG_TERM_KEY, getPrevLogTerm());
-		enc.addAttribute(LEADER_COMMIT_KEY, getLeaderCommit());
-		enc.addCommands(getEntries());
-		
-	}
 
 	@Override public String toString() {
 		return String.format("%s prevLogIndex=[%d] prevLogTerm=[%d] entries=[%s] leaderCommit=[%d]", 
 				super.toString(), getPrevLogIndex(), getPrevLogTerm(), getEntries(), getLeaderCommit());
 	}
+	
+	private static class AppendRequestEncoder implements MessageEncoder<AppendRequestMsg> {
+
+		@Override
+		public AppendRequestMsg decode(Encoder encoder, EncodedObject encObj) {
+			long senderId = AbstractMessage.extractSenderId(encObj);
+			long term = AbstractMessage.extractTerm(encObj);
+			
+			long prevLogIndex = encObj.getLongAttribute(PREV_LOG_INDEX_KEY);
+			long prevLogTerm = encObj.getLongAttribute(PREV_LOG_TERM_KEY);
+			long leaderCommit = encObj.getLongAttribute(LEADER_COMMIT_KEY);
+			Command[] entries = encObj.getCommands(encoder);
+			
+			return new AppendRequestMsg(senderId, term, prevLogIndex, prevLogTerm, 
+					entries, leaderCommit);
+		}
+
+		@Override
+		public void encode(Encoder encoder, EncodedObject encObj, AppendRequestMsg message) {
+			AbstractMessage.encodeBase(encObj, message);
+			encObj.addAttribute(PREV_LOG_INDEX_KEY, message.getPrevLogIndex());
+			encObj.addAttribute(PREV_LOG_TERM_KEY, message.getPrevLogTerm());
+			encObj.addAttribute(LEADER_COMMIT_KEY, message.getLeaderCommit());
+			encObj.addCommands(encoder, message.getEntries());	
+		}
+		
+	}
+	
+	public static Map<String,MessageEncoder<AppendRequestMsg>> getMessageEncoderMap() {
+		return Collections.unmodifiableMap(messageEncoderMap);
+	}
+
+	@Override
+	public void encode(Encoder encoder, EncodedObject encObj) {
+		messageEncoderMap.get(IDENTIFIER).encode(encoder, encObj, this);
+	}
+
 
 }

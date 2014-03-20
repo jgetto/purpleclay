@@ -7,7 +7,13 @@
 
 package net.purpleclay.raft.local;
 
-import net.purpleclay.raft.EncodedObject;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import net.purpleclay.raft.encoding.EncodedObject;
+import net.purpleclay.raft.encoding.Encoder;
+import net.purpleclay.raft.encoding.MessageEncoder;
 
 
 /** Request to vote for a new leader. */
@@ -29,6 +35,12 @@ class VoteRequestMsg extends AbstractMessage {
 	private final long lastLogIndex;
 	private final long lastLogTerm;
 
+	private static final Map<String,MessageEncoder<VoteRequestMsg>> messageEncoderMap = 
+			new HashMap<String,MessageEncoder<VoteRequestMsg>>();
+	static {
+		messageEncoderMap.put(IDENTIFIER, new VoteRequestEncoder());
+	}
+	
 	/**
 	 * Creates an instance of {@code VoteRequestMsg}.
 	 * 
@@ -44,12 +56,6 @@ class VoteRequestMsg extends AbstractMessage {
 		this.lastLogTerm = lastLogTerm;
 	}
 	
-	VoteRequestMsg(EncodedObject enc) {
-		super(enc, IDENTIFIER);
-		this.lastLogIndex = enc.getLongAttribute(LAST_LOG_INDEX_KEY);
-		this.lastLogTerm = enc.getLongAttribute(LAST_LOG_TERM_KEY);
-	}
-
 	/**
 	 * Returns the server identifier for the candidate requesting a vote.
 	 * 
@@ -77,16 +83,39 @@ class VoteRequestMsg extends AbstractMessage {
 		return lastLogTerm;
 	}
 	
-	@Override public void encode(EncodedObject enc) {
-		super.encodeBase(enc);
-		enc.addAttribute(CANDIDATE_ID_KEY, getCandidateId());
-		enc.addAttribute(LAST_LOG_INDEX_KEY, getLastLogIndex());
-		enc.addAttribute(LAST_LOG_TERM_KEY, getLastLogTerm());
-	}
-
 	@Override public String toString() {
 		return String.format("%s candidateId=[%d] lastLogIndex=[%d] lastLogTerm=[%d]", 
 				super.toString(), getCandidateId(), getLastLogIndex(), getLastLogTerm());
+	}
+	
+	private static class VoteRequestEncoder implements MessageEncoder<VoteRequestMsg> {
+
+		@Override
+		public VoteRequestMsg decode(Encoder encoder, EncodedObject encObj) {
+			long senderId = AbstractMessage.extractSenderId(encObj);
+			long term = AbstractMessage.extractTerm(encObj);
+			long lastLogIndex = encObj.getLongAttribute(LAST_LOG_INDEX_KEY);
+			long lastLogTerm = encObj.getLongAttribute(LAST_LOG_TERM_KEY);
+			return new VoteRequestMsg(senderId, term, lastLogIndex, lastLogTerm);
+		}
+
+		@Override
+		public void encode(Encoder encoder, EncodedObject encObj, VoteRequestMsg message) {
+			AbstractMessage.encodeBase(encObj, message);
+			encObj.addAttribute(CANDIDATE_ID_KEY, message.getCandidateId());
+			encObj.addAttribute(LAST_LOG_INDEX_KEY, message.getLastLogIndex());
+			encObj.addAttribute(LAST_LOG_TERM_KEY, message.getLastLogTerm());
+		}
+		
+	}
+	
+	public static Map<String,MessageEncoder<VoteRequestMsg>> getMessageEncoderMap() {
+		return Collections.unmodifiableMap(messageEncoderMap);
+	}
+	
+	@Override
+	public void encode(Encoder encoder, EncodedObject encObj) {
+		messageEncoderMap.get(IDENTIFIER).encode(encoder, encObj, this);
 	}
 
 }

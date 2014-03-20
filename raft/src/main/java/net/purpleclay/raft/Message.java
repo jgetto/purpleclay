@@ -7,6 +7,10 @@
 
 package net.purpleclay.raft;
 
+import net.purpleclay.raft.encoding.Encodable;
+import net.purpleclay.raft.encoding.EncodedObject;
+import net.purpleclay.raft.encoding.Encoder;
+
 
 /**
  * Interface for all Remote Procedure Call messages sent between servers.
@@ -30,5 +34,7 @@ public interface Message extends Encodable {
 	 * @return the term associated with this message
 	 */
 	long getTerm();
+	
+	void encode(Encoder encoder, EncodedObject encObj);
 
 }

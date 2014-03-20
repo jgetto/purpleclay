@@ -7,6 +7,10 @@
 
 package net.purpleclay.raft;
 
+import java.util.Map;
+
+import net.purpleclay.raft.encoding.CommandEncoder;
+
 
 
 /**
@@ -111,5 +115,7 @@ public interface Log {
 	 * @return an array of entries from the starting index to the most recent
 	 */
 	Command [] getEntries(long startingIndex);
+	
+	Map<String,CommandEncoder> getCommandMapping();
 
 }

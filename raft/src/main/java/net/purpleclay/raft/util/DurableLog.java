@@ -17,11 +17,13 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.Log;
 import net.purpleclay.raft.StateMachine;
+import net.purpleclay.raft.encoding.CommandEncoder;
 
 
 /**
@@ -302,6 +304,11 @@ public class DurableLog implements Log {
 			return;
 
 		commandFile.seek(entry.position);
+	}
+
+	@Override
+	public Map<String, CommandEncoder> getCommandMapping() {
+		return stateMachine.getCommandMapping();
 	}
 
 }

@@ -9,6 +9,7 @@ package net.purpleclay.raft.util;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,12 +17,14 @@ import java.util.concurrent.ConcurrentMap;
 
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.CommandResultListener;
-import net.purpleclay.raft.EncodedObject;
 import net.purpleclay.raft.InternalServer;
 import net.purpleclay.raft.MembershipHandle;
 import net.purpleclay.raft.Message;
 import net.purpleclay.raft.StateMachine;
 import net.purpleclay.raft.client.Server;
+import net.purpleclay.raft.encoding.CommandEncoder;
+import net.purpleclay.raft.encoding.EncodedObject;
+import net.purpleclay.raft.encoding.Encoder;
 
 
 /**
@@ -61,6 +64,11 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 
 	// the instances that have been registered but aren't in the membership
 	private final Map<Long,InternalServer> pending = new HashMap<Long,InternalServer>();
+	
+	private static final Map<String,CommandEncoder> commandMap =  new HashMap<String,CommandEncoder>();
+	static {
+		commandMap.put(COMMAND_ID, new MembershipCommand.MembershipCommandEncoder());
+	}
 	
 	/* Implement MembershipHandle */
 
@@ -193,7 +201,7 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 			this.action = action;
 			this.serverId = serverId;
 		}
-		MembershipCommand(EncodedObject enc) {
+		private MembershipCommand(EncodedObject enc) {
 			Preconditions.checkArgument(COMMAND_ID.equals(enc.getIdentifier()), 
 					"Not a valid MembershipCommand");
 			this.action = Action.valueOf(enc.getAttribute(ACTION_KEY));
@@ -207,6 +215,20 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 			enc.addIdentifier(COMMAND_ID);
 			enc.addAttribute(ACTION_KEY, action.toString());
 			enc.addAttribute(SERVER_ID_KEY, serverId);
+		}
+		
+		private static class MembershipCommandEncoder implements CommandEncoder {
+
+			@Override
+			public Command decode(EncodedObject enc) {
+				return new MembershipCommand(enc);
+			}
+
+			@Override
+			public void encode(EncodedObject enc, Command command) {
+				command.encode(enc);
+			}
+			
 		}
 	}
 
@@ -222,7 +244,13 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 		@Override public void send(Command command, CommandResultListener listener) {
 			listener.commandFailed();
 		}
-		@Override public Server getLeader() { return null; };
+		@Override public Server getLeader() { return null; }
+		@Override public Encoder getEncoder() { return null; }
+	}
+
+	@Override
+	public Map<String, CommandEncoder> getCommandMapping() {
+		return Collections.unmodifiableMap(commandMap);
 	}
 	
 }

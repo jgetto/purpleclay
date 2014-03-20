@@ -2,6 +2,7 @@ package net.purpleclay.raft.client;
 
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.CommandResultListener;
+import net.purpleclay.raft.encoding.Encoder;
 
 /**
  * Client facing Server interface.  A Server is always in either the role of 
@@ -54,4 +55,7 @@ public interface Server {
 	 * @return the current leader or {@code null}
 	 */
 	Server getLeader();
+	
+	Encoder getEncoder();
+
 }

@@ -2,7 +2,7 @@ package net.purpleclay.raft.util;
 
 import java.util.concurrent.TimeoutException;
 
-import net.purpleclay.raft.client.Server;
+import net.purpleclay.raft.Server;
 
 public class TestUtils {
 	public static Server waitForLeader(Server s, long timeout) throws InterruptedException, TimeoutException {

@@ -10,7 +10,6 @@ package net.purpleclay.raft;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import net.purpleclay.raft.client.Server;
 import net.purpleclay.raft.encoding.Encoder;
 import net.purpleclay.raft.util.AbstractServer;
 
@@ -22,7 +21,7 @@ import net.purpleclay.raft.util.AbstractServer;
  */
 public class ProxyServer extends AbstractServer {
 
-	private final InternalServer server;
+	private final Server server;
 
 	private final boolean allowManagement;
 
@@ -31,11 +30,11 @@ public class ProxyServer extends AbstractServer {
 	private final ExecutorService messageExecutor;
 	private final ExecutorService commandExecutor;
 
-	public ProxyServer(InternalServer server, int threadCount) {
+	public ProxyServer(Server server, int threadCount) {
 		this(server, threadCount, true);
 	}
 	
-	public ProxyServer(InternalServer server, int threadCount, boolean allowManagement) {
+	public ProxyServer(Server server, int threadCount, boolean allowManagement) {
 		super(server.getId());
 
 		this.server = server;

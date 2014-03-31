@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.CommandResultListener;
 import net.purpleclay.raft.ConsensusHandler;
-import net.purpleclay.raft.InternalServer;
+import net.purpleclay.raft.Server;
 import net.purpleclay.raft.Log;
 import net.purpleclay.raft.MembershipHandle;
 import net.purpleclay.raft.Message;
@@ -95,7 +95,7 @@ public class LocalServer extends AbstractServer {
 	private final Random timeoutGenerator = new Random();
 
 	// the current leader for the cluster, if known
-	private InternalServer currentLeader = null;
+	private Server currentLeader = null;
 
 	// marker for identifying that a leader is not currently known
 	private static final long UNKNOWN_LEADER = -1L;
@@ -326,7 +326,7 @@ public class LocalServer extends AbstractServer {
 		currentLeader.invoke(request);
 	}
 	
-	@Override public synchronized InternalServer getLeader() {
+	@Override public synchronized Server getLeader() {
 		return currentLeader;
 	}
 	

@@ -16,7 +16,7 @@ import net.purpleclay.raft.Log;
 import net.purpleclay.raft.MembershipHandle;
 import net.purpleclay.raft.Message;
 import net.purpleclay.raft.NonDurableLog;
-import net.purpleclay.raft.InternalServer;
+import net.purpleclay.raft.Server;
 import net.purpleclay.raft.StateMachine;
 
 import org.junit.Assert;
@@ -74,13 +74,13 @@ public class LocalServerTest {
 	}
 	
 	private static class SingletonMembershipHandle implements MembershipHandle {
-		final Collection<InternalServer> servers = new HashSet<InternalServer>();
+		final Collection<Server> servers = new HashSet<Server>();
 		@Override public int getMembershipCount() { return 1; }
 		@Override public void invokeAll(Message message) { }
-		@Override public InternalServer findServer(long id) {
-			InternalServer server = servers.iterator().next();
+		@Override public Server findServer(long id) {
+			Server server = servers.iterator().next();
 			return id == server.getId() ? server : null;
 		}
-		@Override public Collection<InternalServer> getServers() { return servers; }
+		@Override public Collection<Server> getServers() { return servers; }
 	}
 }

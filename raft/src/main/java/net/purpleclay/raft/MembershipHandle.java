@@ -39,13 +39,13 @@ public interface MembershipHandle {
 	 * @return the {@code Server} with the given identifier or {@code null} if
 	 *         no server is known by the given identifier
 	 */
-	InternalServer findServer(long id);
+	Server findServer(long id);
 
 	/**
 	 * Returns the known membership.
 	 *
 	 * @return a {@code Collection} of the known {@code Server}s
 	 */
-	Collection<InternalServer> getServers();
+	Collection<Server> getServers();
 
 }

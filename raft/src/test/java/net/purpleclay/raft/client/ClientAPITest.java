@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import junit.framework.Assert;
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.CommandResultListener;
+import net.purpleclay.raft.Server;
 import net.purpleclay.raft.KVStateMachine;
 import net.purpleclay.raft.NonDurableLog;
 import net.purpleclay.raft.util.DelegatingStateMachine;

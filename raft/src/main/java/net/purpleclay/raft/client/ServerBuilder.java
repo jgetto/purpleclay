@@ -2,6 +2,7 @@ package net.purpleclay.raft.client;
 
 import java.util.Properties;
 
+import net.purpleclay.raft.Server;
 import net.purpleclay.raft.Log;
 import net.purpleclay.raft.MembershipHandle;
 import net.purpleclay.raft.StateMachine;

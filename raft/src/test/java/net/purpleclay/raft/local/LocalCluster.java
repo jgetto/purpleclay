@@ -22,7 +22,7 @@ import net.purpleclay.raft.MembershipHandle;
 import net.purpleclay.raft.Message;
 import net.purpleclay.raft.NonDurableLog;
 import net.purpleclay.raft.ProxyServer;
-import net.purpleclay.raft.InternalServer;
+import net.purpleclay.raft.Server;
 
 
 /** Testing utility for a fixed collection of {@code LocalServer} instances. */
@@ -67,12 +67,12 @@ public class LocalCluster {
 	}
 
 	public void start() {
-		for (InternalServer server : proxyServers.values())
+		for (Server server : proxyServers.values())
 			server.start();
 	}
 
 	public void shutdown() {
-		for (InternalServer server : proxyServers.values())
+		for (Server server : proxyServers.values())
 			server.shutdown();
 	}
 
@@ -136,25 +136,25 @@ public class LocalCluster {
 	}
 
 	public void sendUpdate(String key, String value) {
-		InternalServer leader = getLeader();
+		Server leader = getLeader();
 		if (leader == null)
 			throw new IllegalStateException("no leader is known");
 		sendUpdate(key, value, leader);
 	}
 
-	public void sendUpdate(String key, String value, InternalServer server) {
+	public void sendUpdate(String key, String value, Server server) {
 		server.send(KVStateMachine.createCommand(key, value));
 	}
 
 	public boolean waitOnUpdate(String key, String value, long timeout) {
-		InternalServer leader = getLeader();
+		Server leader = getLeader();
 		if (leader == null)
 			throw new IllegalStateException("no leader is known");
 		return waitOnUpdate(key, value, timeout, leader);
 	}
 
 	public boolean waitOnUpdate(String key, String value, long timeout,
-								InternalServer server)
+								Server server)
 	{
 		CountDownLatch latch = new CountDownLatch(1);
 		UpdateListener listener = new UpdateListener(latch);
@@ -175,16 +175,16 @@ public class LocalCluster {
 			return proxyServers.size();
 		}
 		@Override public void invokeAll(Message message) {
-			for (InternalServer server : proxyServers.values()) {
+			for (Server server : proxyServers.values()) {
 				if (server.getId() != message.getSenderId())
 					server.invoke(message);
 			}
 		}
-		@Override public InternalServer findServer(long id) {
+		@Override public Server findServer(long id) {
 			return proxyServers.get(id);
 		}
-		@Override public Collection<InternalServer> getServers() {
-			return new HashSet<InternalServer>(proxyServers.values());
+		@Override public Collection<Server> getServers() {
+			return new HashSet<Server>(proxyServers.values());
 		}
 	}
 

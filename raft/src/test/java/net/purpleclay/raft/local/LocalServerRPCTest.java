@@ -10,12 +10,11 @@ import java.util.concurrent.TimeUnit;
 import junit.framework.Assert;
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.CommandResultListener;
-import net.purpleclay.raft.InternalServer;
+import net.purpleclay.raft.Server;
 import net.purpleclay.raft.KVStateMachine;
 import net.purpleclay.raft.MembershipHandle;
 import net.purpleclay.raft.Message;
 import net.purpleclay.raft.NonDurableLog;
-import net.purpleclay.raft.client.Server;
 import net.purpleclay.raft.client.ServerBuilder;
 import net.purpleclay.raft.encoding.Encoder;
 import net.purpleclay.raft.local.LocalServer.Role;
@@ -109,7 +108,7 @@ public class LocalServerRPCTest {
 		Assert.assertEquals(1, appendResponse.getIndex());
 	}
 	
-	private static void send(InternalServer server, Message msg) {
+	private static void send(Server server, Message msg) {
 //		System.out.println("SEND: " + msg);
 		server.invoke(msg);
 	}
@@ -132,9 +131,9 @@ public class LocalServerRPCTest {
 	}
 	
 	private class RPCTestMembershipHandle implements MembershipHandle {
-		private final Map<Long,InternalServer> servers = new HashMap<Long,InternalServer>();
+		private final Map<Long,Server> servers = new HashMap<Long,Server>();
 		
-		void addServer(InternalServer s) {
+		void addServer(Server s) {
 			servers.put(s.getId(), s);
 		}
 		
@@ -145,19 +144,19 @@ public class LocalServerRPCTest {
 
 		@Override
 		public void invokeAll(Message message) {
-			for (InternalServer server : servers.values()) {
+			for (Server server : servers.values()) {
 				if (server.getId() != message.getSenderId())
 					server.invoke(message);
 			}
 		}
 
 		@Override
-		public InternalServer findServer(long id) {
+		public Server findServer(long id) {
 			return servers.get(id);
 		}
 
 		@Override
-		public Collection<InternalServer> getServers() {
+		public Collection<Server> getServers() {
 			return servers.values();
 		}
 		
@@ -165,7 +164,7 @@ public class LocalServerRPCTest {
 	
 	private static long getMaxId(RPCTestMembershipHandle mh) {
 		long maxId = -1L;
-		for (InternalServer s : mh.getServers()) {
+		for (Server s : mh.getServers()) {
 			maxId = Math.max(maxId, s.getId());
 		}
 		return maxId;

@@ -17,11 +17,10 @@ import java.util.concurrent.ConcurrentMap;
 
 import net.purpleclay.raft.Command;
 import net.purpleclay.raft.CommandResultListener;
-import net.purpleclay.raft.InternalServer;
+import net.purpleclay.raft.Server;
 import net.purpleclay.raft.MembershipHandle;
 import net.purpleclay.raft.Message;
 import net.purpleclay.raft.StateMachine;
-import net.purpleclay.raft.client.Server;
 import net.purpleclay.raft.encoding.CommandEncoder;
 import net.purpleclay.raft.encoding.EncodedObject;
 import net.purpleclay.raft.encoding.Encoder;
@@ -59,11 +58,11 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 	public static final String COMMAND_ID = "DynamicMembershipHandle";
 
 	// the servers applied to the replicated log as the accepted membership
-	private final ConcurrentMap<Long,InternalServer> servers =
-			new ConcurrentHashMap<Long,InternalServer>();
+	private final ConcurrentMap<Long,Server> servers =
+			new ConcurrentHashMap<Long,Server>();
 
 	// the instances that have been registered but aren't in the membership
-	private final Map<Long,InternalServer> pending = new HashMap<Long,InternalServer>();
+	private final Map<Long,Server> pending = new HashMap<Long,Server>();
 	
 	private static final Map<String,CommandEncoder> commandMap =  new HashMap<String,CommandEncoder>();
 	static {
@@ -77,14 +76,14 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 	}
 
 	@Override public void invokeAll(Message message) {
-		for (InternalServer server : servers.values()) {
+		for (Server server : servers.values()) {
 			if (server.getId() != message.getSenderId())
 				server.invoke(message);
 		}
 	}
 
-	@Override public InternalServer findServer(long id) {
-		InternalServer server = servers.get(id);
+	@Override public Server findServer(long id) {
+		Server server = servers.get(id);
 		if (server != null)
 			return server;
 
@@ -97,7 +96,7 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 		}
 	}
 
-	@Override public Collection<InternalServer> getServers() {
+	@Override public Collection<Server> getServers() {
 		return servers.values();
 	}
 
@@ -113,7 +112,7 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 		// some instance into the map, making sure the server gets started
 
 		synchronized (pending) {
-			InternalServer server = pending.remove(mh.serverId);
+			Server server = pending.remove(mh.serverId);
 			if (mh.action == MembershipCommand.Action.ADD) {
 				if (server == null)
 					server = new UnavailableServer(mh.serverId);
@@ -166,7 +165,7 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 	 *
 	 * @param server the {@code Server} to register for the server's identifier
 	 */
-	public final void registerServer(InternalServer server) {
+	public final void registerServer(Server server) {
 		synchronized (pending) {
 			if (servers.replace(server.getId(), server) == null)
 				pending.put(server.getId(), server);
@@ -233,7 +232,7 @@ public class DynamicMembershipHandle implements MembershipHandle, StateMachine {
 	}
 
 	/** Private Server implementation for members that aren't registered. */
-	private static class UnavailableServer implements InternalServer {
+	private static class UnavailableServer implements Server {
 		private final long serverId;
 		UnavailableServer(long serverId) { this.serverId = serverId; }
 		@Override public void start() {  }
